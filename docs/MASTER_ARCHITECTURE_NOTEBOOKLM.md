@@ -30,6 +30,7 @@
 
 ### 2.3 Gemini Entegrasyon Katmanı
 - **Canlı Ses (Live STT):** `models/gemini-3.5-transcribe-live` WebSocket tüneli. 16.000 Hz 16-bit Mono PCM ses doğrudan Google Cloud'a akar; hece hece metin kutusuna dökülür.
+- **Canlı Video & Sesli Çeviri (Speech-to-Speech):** `models/gemini-3.5-live-translate-preview` WebSocket tüneli. 16kHz PCM mikrofon/dahili medya girişi -> Google Cloud -> 24kHz saf insan sesi PCM çıkışı (`AudioTrack`). `echoTargetLanguage: false` ile akustik döngü önlenir; `AudioAttributes.USAGE_MEDIA` ile Xiaomi Ses Asistanı bağımsız ses kanalları korunur.
 - **Görsel OCR:** `gemini-3.8-flash` REST / SDK çağrısı. Belgedeki tabloları `| Kolon |` Markdown tablosuna, listeleri `- [ ]` formatına çevirir.
 
 ---
@@ -38,3 +39,5 @@
 1. **Pencere Çakışması:** Overlay pencerelerine asla klavyeyi engelleyecek odak bayrağı (`FLAG_ALT_FOCUSABLE_IM` hariç) verilmez.
 2. **Sıfır OOM:** Kamera önizleme bitmap'leri doğrudan `CompressFormat.JPEG` kalitesiyle geçici stream'e aktarılır, bellekte tutulmaz.
 3. **HyperOS Koruması:** `BOOT_COMPLETED` alıcısı ve pil kısıtlaması muafiyeti bildirim paneli hazır tutulmalıdır.
+4. **WebSocket Kurulum Şeması:** `gemini-3.5-live-translate-preview` modelinde `inputAudioTranscription` ve `outputAudioTranscription` doğrudan `setup` kökünde, `translationConfig` ise `generationConfig` içinde olmalıdır.
+5. **Ses Donanımı Dokunulmazlığı:** Global `AudioManager.setStreamVolume` çağrısı yapılmaz; arka plan sesini kısmak için yalnızca `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` talep edilir.

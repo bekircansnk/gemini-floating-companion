@@ -37,3 +37,9 @@ Gemini Floating Companion, Xiaomi 13 (Android 14 / HyperOS) başta olmak üzere 
 - **Otomatik Başlatma (Autostart)**: Güvenlik uygulamasından izin verilir.
 - **Pencere Tipi**: `WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY` + `FLAG_NOT_FOCUSABLE`.
 - **Erişilebilirlik Hizmeti**: `android:canPerformGestures="true"`, `android:canRetrieveWindowContent="true"`.
+
+---
+
+## 5. Çözüm ve AI Rehberleri İndeksi (`docs/ai_rehberleri/`)
+1. [Kamera OCR & Klavye Pencere Stabilizasyon Rehberi](file:///Users/bekir/Uygulamalarim/GeminiFloatingCompanion/docs/ai_rehberleri/kamera_ocr_ve_klavye_stabilizasyon_rehberi_AI.md)
+2. [Canlı Video Sesli Çeviri & WebSocket Stabilizasyon Rehberi](file:///Users/bekir/Uygulamalarim/GeminiFloatingCompanion/docs/ai_rehberleri/canli_video_sesli_ceviri_ve_websocket_rehberi_AI.md)
