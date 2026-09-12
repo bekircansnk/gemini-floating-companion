@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#99000000">
+
+    <!-- Card container for Camera overlay -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="20dp"
+        android:background="@drawable/bg_glass_card"
+        android:elevation="24dp"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Header Bar -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tvCameraTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="sans-serif-bold"
+                android:text="📸 Gemini Akıllı Kamera &amp; OCR"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:id="@+id/btnCameraClose"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="Kapat"
+                android:focusable="true"
+                android:padding="6dp"
+                android:src="@drawable/ic_close" />
+        </RelativeLayout>
+
+        <!-- Mode Toggle Tabs (OCR vs CamScanner PDF) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_glass_bubble"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <TextView
+                android:id="@+id/tabOcr"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_glass_bubble"
+                android:backgroundTint="@color/gemini_blue"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="Akıllı OCR / Tablo"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tabPdf"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="CamScanner PDF"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Camera Viewfinder Preview -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="340dp"
+            android:clipToOutline="true">
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/previewView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Guide Frame overlay -->
+            <View
+                android:id="@+id/viewScanGuide"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="16dp"
+                android:background="@drawable/bg_glass_card"
+                android:backgroundTint="#1AFFFFFF" />
+
+            <!-- Progress Overlay when processing -->
+            <LinearLayout
+                android:id="@+id/layoutProcessing"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#B30F172A"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/gemini_blue" />
+
+                <TextView
+                    android:id="@+id/tvProcessingStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Gemini 3.8 Flash Görseli Analiz Ediyor..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Capture Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnCapture"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:backgroundTint="@color/gemini_blue"
+                android:fontFamily="sans-serif-medium"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:text="📸 Fotoğraf Çek &amp; Analiz Et"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

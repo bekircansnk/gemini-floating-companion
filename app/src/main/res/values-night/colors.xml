@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gemini_blue">#60A5FA</color>
+    <color name="gemini_purple">#A78BFA</color>
+    <color name="gemini_cyan">#22D3EE</color>
+    <color name="gemini_pink">#F472B6</color>
+
+    <!-- Dark Theme Glass Colors -->
+    <color name="glass_surface">#D90F172A</color>
+    <color name="glass_surface_elevated">#E61E293B</color>
+    <color name="glass_border">#33FFFFFF</color>
+    <color name="glass_shadow">#80000000</color>
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="bubble_glow">#5960A5FA</color>
+    <color name="recording_glow">#80F87171</color>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Gemini Companion</string>
+    <string name="accessibility_service_name">Gemini Akıllı Asistan Servisi</string>
+    <string name="accessibility_service_description">Mesaj yazma ve metin kutularını otomatik tespit ederek Gemini cam baloncuğunu etkinleştirir, canlı dikte ve görsel OCR metinlerini doğrudan alana yazar.</string>
+    <string name="service_notification_title">Gemini Companion Aktif</string>
+    <string name="service_notification_text">Giriş alanları izleniyor, cam baloncuk hazır.</string>
+    <string name="channel_name">Gemini Companion Arka Plan Servisi</string>
+    <string name="channel_description">Sürekli arka plan dayanıklılığı ve baloncuk servisi bildirimleri.</string>
+    <string name="action_dictation">Canlı Dikte</string>
+    <string name="action_vision_ocr">Akıllı OCR</string>
+    <string name="action_doc_scan">PDF Belge</string>
+</resources>

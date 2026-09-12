@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass_card"
+    android:elevation="16dp"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <!-- Action 1: Live Voice Dictation -->
+    <LinearLayout
+        android:id="@+id/btnActionVoice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@string/action_dictation"
+            android:src="@drawable/ic_mic" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/action_dictation"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:background="@color/glass_border" />
+
+    <!-- Action 2: Intelligent Vision OCR -->
+    <LinearLayout
+        android:id="@+id/btnActionOcr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@string/action_vision_ocr"
+            android:src="@drawable/ic_camera" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/action_vision_ocr"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:background="@color/glass_border" />
+
+    <!-- Action 3: CamScanner Style PDF Scan -->
+    <LinearLayout
+        android:id="@+id/btnActionScanDoc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@string/action_doc_scan"
+            android:src="@drawable/ic_document" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/action_doc_scan"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:background="@color/glass_border" />
+
+    <!-- Action 4: Close Button -->
+    <ImageView
+        android:id="@+id/btnCloseMenu"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="Kapat"
+        android:focusable="true"
+        android:padding="6dp"
+        android:src="@drawable/ic_close" />
+</LinearLayout>

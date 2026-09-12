@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Glowing backdrop for active/recording state -->
+    <View
+        android:id="@+id/viewGlow"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_glass_bubble"
+        android:backgroundTint="@color/bubble_glow"
+        android:visibility="gone" />
+
+    <!-- Main Glassmorphic Capsule -->
+    <LinearLayout
+        android:id="@+id/bubbleContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_glass_bubble"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp">
+
+        <ImageView
+            android:id="@+id/ivBubbleIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_gemini_sparkle" />
+
+        <TextView
+            android:id="@+id/tvBubbleStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Gemini"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/pbLoading"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="8dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/gemini_blue"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>
