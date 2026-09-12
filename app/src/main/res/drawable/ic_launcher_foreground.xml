@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Translucent Glass Bento Squircle Container -->
+    <path
+        android:pathData="M32,24 L76,24 A18,18 0 0,1 94,42 L94,66 A18,18 0 0,1 76,84 L32,84 A18,18 0 0,1 14,66 L14,42 A18,18 0 0,1 32,24 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="135"
+                android:startColor="#25FFFFFF"
+                android:centerColor="#0DFFFFFF"
+                android:endColor="#05FFFFFF"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+
+    <!-- Glass Bento Border Highlight -->
+    <path
+        android:pathData="M32,24 L76,24 A18,18 0 0,1 94,42 L94,66 A18,18 0 0,1 76,84 L32,84 A18,18 0 0,1 14,66 L14,42 A18,18 0 0,1 32,24 Z"
+        android:strokeWidth="1.2">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:angle="135"
+                android:startColor="#60FFFFFF"
+                android:centerColor="#2038BDF8"
+                android:endColor="#10A855F7"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+
+    <!-- Gemini AI 4-Point Luminous Star Core -->
+    <path
+        android:pathData="M54,28 C54,42 66,54 80,54 C66,54 54,66 54,80 C54,66 42,54 28,54 C42,54 54,42 54,28 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="45"
+                android:startColor="#38BDF8"
+                android:centerColor="#818CF8"
+                android:endColor="#EC4899"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+
+    <!-- Secondary Mini Accent Star -->
+    <path
+        android:pathData="M74,32 C74,37 78,41 83,41 C78,41 74,45 74,50 C74,45 70,41 65,41 C70,41 74,37 74,32 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#F472B6"
+                android:endColor="#60A5FA"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+</vector>

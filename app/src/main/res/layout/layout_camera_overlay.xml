@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cameraOverlayRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#99000000">
+    android:background="#40000000">
 
-    <!-- Card container for Camera overlay -->
+    <!-- Card container for Camera overlay - Modern Minimalist Glass Bento -->
     <LinearLayout
+        android:id="@+id/cameraCard"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:layout_margin="20dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="110dp"
         android:background="@drawable/bg_glass_card"
-        android:elevation="24dp"
+        android:elevation="20dp"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <!-- Top Header Bar -->
         <RelativeLayout
@@ -28,66 +33,109 @@
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:fontFamily="sans-serif-bold"
-                android:text="📸 Gemini Akıllı Kamera &amp; OCR"
+                android:text="Kamera Modu"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
 
             <ImageView
                 android:id="@+id/btnCameraClose"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/ripple_round"
                 android:clickable="true"
                 android:contentDescription="Kapat"
                 android:focusable="true"
-                android:padding="6dp"
+                android:padding="8dp"
                 android:src="@drawable/ic_close" />
         </RelativeLayout>
 
-        <!-- Mode Toggle Tabs (OCR vs CamScanner PDF) -->
+        <!-- Mode Toggle Tabs (Clean Minimalist Segmented Buttons) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginBottom="12dp"
-            android:background="@drawable/bg_glass_bubble"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:baselineAligned="false"
             android:orientation="horizontal"
             android:weightSum="2">
 
-            <TextView
+            <!-- Tab 1: Metin Tarama -->
+            <LinearLayout
                 android:id="@+id/tabOcr"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_glass_bubble"
                 android:backgroundTint="@color/gemini_blue"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="Akıllı OCR / Tablo"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
 
-            <TextView
+                <ImageView
+                    android:id="@+id/ivTabOcrIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_camera"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/tvTabOcrTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:gravity="center"
+                    android:text="Metin Tarama"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13.5sp" />
+            </LinearLayout>
+
+            <!-- Tab 2: PDF Belge -->
+            <LinearLayout
                 android:id="@+id/tabPdf"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_glass_bubble"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="CamScanner PDF"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:id="@+id/ivTabPdfIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_document"
+                    android:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/tvTabPdfTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:gravity="center"
+                    android:text="PDF Belge"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13.5sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Camera Viewfinder Preview -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="340dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#000000"
             android:clipToOutline="true">
 
             <androidx.camera.view.PreviewView
@@ -95,23 +143,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-            <!-- Guide Frame overlay -->
+            <!-- Guide Frame overlay with scan corners -->
             <View
                 android:id="@+id/viewScanGuide"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="16dp"
+                android:layout_margin="12dp"
                 android:background="@drawable/bg_glass_card"
-                android:backgroundTint="#1AFFFFFF" />
+                android:backgroundTint="#12FFFFFF" />
 
             <!-- Progress Overlay when processing -->
             <LinearLayout
                 android:id="@+id/layoutProcessing"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#B30F172A"
+                android:background="#E60F172A"
                 android:gravity="center"
                 android:orientation="vertical"
+                android:padding="20dp"
                 android:visibility="gone">
 
                 <ProgressBar
@@ -125,30 +174,43 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="Gemini 3.8 Flash Görseli Analiz Ediyor..."
+                    android:fontFamily="sans-serif-bold"
+                    android:gravity="center"
+                    android:text="Görsel Analiz Ediliyor..."
                     android:textColor="#FFFFFF"
-                    android:textSize="14sp" />
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/tvProcessingSub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="Metinler ve içerik aktarılıyor..."
+                    android:textColor="#94A3B8"
+                    android:textSize="12sp" />
             </LinearLayout>
         </FrameLayout>
 
-        <!-- Capture Controls -->
+        <!-- Capture Controls Bar -->
         <LinearLayout
+            android:id="@+id/layoutCaptureControls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btnCapture"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:backgroundTint="@color/gemini_blue"
-                android:fontFamily="sans-serif-medium"
-                android:paddingStart="28dp"
-                android:paddingEnd="28dp"
-                android:text="📸 Fotoğraf Çek &amp; Analiz Et"
+                android:elevation="4dp"
+                android:fontFamily="sans-serif-bold"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="Metni Tara ve Yapıştır"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
         </LinearLayout>

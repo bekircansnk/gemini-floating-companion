@@ -13,7 +13,9 @@ enum class BubbleState {
     IDLE,
     LISTENING,
     PROCESSING,
-    ERROR
+    ERROR,
+    VIDEO_DETECTED,
+    TRANSLATING
 }
 
 enum class CameraMode {

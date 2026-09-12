@@ -1,7 +1,22 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        FileInputStream(localFile).use { load(it) }
+    }
+}
+
+fun getLocalProp(key: String, default: String = ""): String {
+    val prop = localProperties.getProperty(key) ?: default
+    return "\"" + prop.replace("\"", "") + "\""
 }
 
 android {
@@ -12,13 +27,19 @@ android {
         applicationId = "com.gemini.floatingcompanion"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "GEMINI_KEY_2", getLocalProp("GEMINI_KEY_2"))
+        buildConfigField("String", "GEMINI_KEY_4", getLocalProp("GEMINI_KEY_4"))
+        buildConfigField("String", "GEMINI_KEY_5", getLocalProp("GEMINI_KEY_5"))
+        buildConfigField("String", "GEMINI_KEY_1", getLocalProp("GEMINI_KEY_1"))
+        buildConfigField("String", "GEMINI_KEY_3", getLocalProp("GEMINI_KEY_3"))
     }
 
     buildTypes {
@@ -43,6 +64,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 
     packaging {

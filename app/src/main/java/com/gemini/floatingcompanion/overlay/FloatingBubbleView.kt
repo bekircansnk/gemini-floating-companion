@@ -56,12 +56,19 @@ class FloatingBubbleView(
     private var touchStartY = 0f
     private var isDragging = false
     private var isLongPressed = false
+    private var currentState: BubbleState = BubbleState.IDLE
+
+    private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop.coerceAtLeast(24)
 
     private val longPressRunnable = Runnable {
         isLongPressed = true
         triggerHaptic()
         onBubbleLongClick()
     }
+
+    var onDragStart: (() -> Unit)? = null
+    var onDragMove: ((bubbleCenterX: Float, bubbleCenterY: Float) -> Boolean)? = null
+    var onDragEnd: ((isOverCloseTarget: Boolean) -> Unit)? = null
 
     init {
         LayoutInflater.from(context).inflate(R.layout.layout_floating_bubble, this, true)
@@ -76,7 +83,7 @@ class FloatingBubbleView(
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouchHandling() {
-        bubbleContainer.setOnTouchListener { _, event ->
+        this.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = params.x
@@ -85,38 +92,53 @@ class FloatingBubbleView(
                     touchStartY = event.rawY
                     isDragging = false
                     isLongPressed = false
+
                     mainHandler.postDelayed(longPressRunnable, 450)
                     true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
+                    if (isLongPressed) return@setOnTouchListener true
                     val dx = (event.rawX - touchStartX).toInt()
                     val dy = (event.rawY - touchStartY).toInt()
-                    if (abs(dx) > 12 || abs(dy) > 12) {
+                    if (abs(dx) > touchSlop || abs(dy) > touchSlop) {
                         if (!isDragging) {
                             isDragging = true
                             mainHandler.removeCallbacks(longPressRunnable)
+                            onDragStart?.invoke()
                         }
                         params.x = initialX + dx
                         params.y = initialY + dy
                         updateLayoutSafe()
+
+                        val bubbleCenterX = event.rawX
+                        val bubbleCenterY = event.rawY
+                        onDragMove?.invoke(bubbleCenterX, bubbleCenterY)
                     }
                     true
                 }
 
                 MotionEvent.ACTION_UP -> {
                     mainHandler.removeCallbacks(longPressRunnable)
+
                     if (!isDragging && !isLongPressed) {
                         triggerHaptic()
                         onBubbleClick()
                     } else if (isDragging) {
-                        snapToEdge()
+                        val isOverClose = onDragMove?.invoke(event.rawX, event.rawY) ?: false
+                        onDragEnd?.invoke(isOverClose)
+                        if (!isOverClose) {
+                            snapToEdge()
+                        }
                     }
                     true
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
                     mainHandler.removeCallbacks(longPressRunnable)
+                    if (isDragging) {
+                        onDragEnd?.invoke(false)
+                    }
                     true
                 }
 
@@ -128,10 +150,11 @@ class FloatingBubbleView(
     private fun snapToEdge() {
         val displayMetrics = context.resources.displayMetrics
         val screenWidth = displayMetrics.widthPixels
-        val targetX = if (params.x + width / 2 < screenWidth / 2) 20 else screenWidth - width - 20
+        val bubbleWidth = width.takeIf { it > 0 } ?: 54
+        val targetX = if (params.x + bubbleWidth / 2 < screenWidth / 2) 16 else screenWidth - bubbleWidth - 16
 
         val animator = ValueAnimator.ofInt(params.x, targetX)
-        animator.duration = 250
+        animator.duration = 200
         animator.interpolator = DecelerateInterpolator()
         animator.addUpdateListener { anim ->
             params.x = anim.animatedValue as Int
@@ -145,45 +168,53 @@ class FloatingBubbleView(
             if (isAttachedToWindow) {
                 windowManager.updateViewLayout(this, params)
             }
-        } catch (e: Exception) {
-            // view might be detached
-        }
+        } catch (_: Exception) {}
     }
 
     fun setState(state: BubbleState, message: String? = null) {
+        currentState = state
+        tvStatus.visibility = View.GONE
+        viewGlow.visibility = View.GONE
+
         when (state) {
             BubbleState.IDLE -> {
                 ivIcon.setImageResource(R.drawable.ic_gemini_sparkle)
-                viewGlow.visibility = View.GONE
                 pbLoading.visibility = View.GONE
-                tvStatus.visibility = View.GONE
+                bubbleContainer.alpha = 1.0f
             }
 
             BubbleState.LISTENING -> {
+                // Sabit, göz yormayan, pırpır etmeyen dairesel mikrofon ikonu
                 ivIcon.setImageResource(R.drawable.ic_mic)
-                viewGlow.visibility = View.VISIBLE
-                viewGlow.backgroundTintList = context.getColorStateList(R.color.recording_glow)
                 pbLoading.visibility = View.GONE
-                tvStatus.text = message ?: "Dinliyor..."
-                tvStatus.visibility = View.VISIBLE
+                bubbleContainer.alpha = 1.0f
             }
 
             BubbleState.PROCESSING -> {
                 ivIcon.setImageResource(R.drawable.ic_gemini_sparkle)
-                viewGlow.visibility = View.GONE
                 pbLoading.visibility = View.VISIBLE
-                tvStatus.text = message ?: "İşleniyor..."
-                tvStatus.visibility = View.VISIBLE
+                bubbleContainer.alpha = 1.0f
             }
 
             BubbleState.ERROR -> {
                 ivIcon.setImageResource(R.drawable.ic_close)
-                viewGlow.visibility = View.GONE
                 pbLoading.visibility = View.GONE
-                tvStatus.text = message ?: "Hata!"
-                tvStatus.visibility = View.VISIBLE
+                bubbleContainer.alpha = 1.0f
+            }
+
+            BubbleState.VIDEO_DETECTED -> {
+                ivIcon.setImageResource(R.drawable.ic_translate)
+                pbLoading.visibility = View.GONE
+                bubbleContainer.alpha = 1.0f
+            }
+
+            BubbleState.TRANSLATING -> {
+                ivIcon.setImageResource(R.drawable.ic_translate)
+                pbLoading.visibility = View.GONE
+                bubbleContainer.alpha = 0.70f
             }
         }
+        post { updateLayoutSafe() }
     }
 
     private fun triggerHaptic() {

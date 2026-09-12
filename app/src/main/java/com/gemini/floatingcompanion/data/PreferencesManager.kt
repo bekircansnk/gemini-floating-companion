@@ -6,10 +6,33 @@ import android.content.SharedPreferences
 class PreferencesManager(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val keyManager = GeminiApiKeyManager.getInstance()
 
+    var customApiKey: String
+        get() = prefs.getString(KEY_CUSTOM_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_CUSTOM_API_KEY, value.trim()).apply()
+
+    var useVaultPool: Boolean
+        get() = prefs.getBoolean(KEY_USE_VAULT_POOL, true)
+        set(value) = prefs.edit().putBoolean(KEY_USE_VAULT_POOL, value).apply()
+
+    /**
+     * Aktif kullanılan API anahtarı.
+     * Eğer useVaultPool true ise veya custom key girilmemişse, otomatik olarak
+     * rotasyonlu 6-key havuzundaki sağlıklı aktif anahtarı döndürür.
+     */
     var apiKey: String
-        get() = prefs.getString(KEY_API_KEY, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_API_KEY, value.trim()).apply()
+        get() {
+            val custom = customApiKey
+            return if (!useVaultPool && custom.isNotBlank()) {
+                custom
+            } else {
+                keyManager.getActiveApiKey()
+            }
+        }
+        set(value) {
+            customApiKey = value
+        }
 
     var liveModel: String
         get() = prefs.getString(KEY_LIVE_MODEL, "models/gemini-3.5-transcribe-live") ?: "models/gemini-3.5-transcribe-live"
@@ -33,7 +56,8 @@ class PreferencesManager(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "gemini_companion_prefs"
-        private const val KEY_API_KEY = "api_key"
+        private const val KEY_CUSTOM_API_KEY = "custom_api_key" // SCOPE-OK: SharedPreferences anahtar adi
+        private const val KEY_USE_VAULT_POOL = "use_vault_pool"
         private const val KEY_LIVE_MODEL = "live_model"
         private const val KEY_VISION_MODEL = "vision_model"
         private const val KEY_LANGUAGE = "language"

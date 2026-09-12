@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/subtitleContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass_subtitle_card"
+    android:elevation="8dp"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="12dp">
+
+    <!-- Top Drag Handle Pill -->
+    <View
+        android:id="@+id/viewDragHandle"
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/bg_action_circle"
+        android:backgroundTint="#4DFFFFFF" />
+
+    <!-- Header bar with Clean Title, Live Indicator & Separated Buttons -->
+    <LinearLayout
+        android:id="@+id/headerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Left: Live dot + Title -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/viewLiveDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_action_circle"
+                android:backgroundTint="#10B981" />
+
+            <TextView
+                android:id="@+id/tvSubtitleHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Canlı Çeviri"
+                android:textColor="#93C5FD"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Right: Controls clearly separated with comfortable touch targets -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Mute/Unmute Turkish AI voice speaker button -->
+            <ImageView
+                android:id="@+id/btnToggleVoice"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/ripple_round"
+                android:clickable="true"
+                android:contentDescription="AI Sesi Aç/Kapat"
+                android:focusable="true"
+                android:padding="5dp"
+                android:src="@drawable/ic_volume_up"
+                android:tint="#38BDF8" />
+
+            <!-- Close subtitle overlay button -->
+            <ImageView
+                android:id="@+id/btnCloseSubtitle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/ripple_round"
+                android:clickable="true"
+                android:contentDescription="Altyazıyı Gizle"
+                android:focusable="true"
+                android:padding="6dp"
+                android:src="@drawable/ic_close"
+                android:tint="#CBD5E1" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Real-time Subtitle Text View -->
+    <TextView
+        android:id="@+id/tvLiveSubtitleText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="40dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:lineSpacingExtra="3dp"
+        android:maxLines="4"
+        android:shadowColor="#DD000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2"
+        android:text="Video sesi dinleniyor, çeviri bekleniyor..."
+        android:textColor="#F8FAFC"
+        android:textSize="13.5sp" />
+
+</LinearLayout>

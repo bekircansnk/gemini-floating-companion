@@ -31,7 +31,12 @@ class FloatingBubbleService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "FloatingBubbleService started")
+        Log.d(TAG, "FloatingBubbleService started with action: ${intent?.action}")
+        when (intent?.action) {
+            ACTION_START_TRANSLATION -> bubbleManager?.startLiveVideoTranslation()
+            ACTION_STOP_TRANSLATION -> bubbleManager?.stopLiveVideoTranslation()
+            ACTION_SHOW_BUBBLE -> bubbleManager?.showBubble()
+        }
         return START_STICKY
     }
 
@@ -53,21 +58,40 @@ class FloatingBubbleService : Service() {
             .build()
     }
 
-    private fun startForegroundServiceNotification(isRecording: Boolean = false) {
+    private var isRecordingActive = false
+    private var isMediaProjectionActive = false
+
+    fun updateForegroundTypes(
+        isRecording: Boolean = isRecordingActive,
+        isMediaProjection: Boolean = isMediaProjectionActive
+    ) {
+        isRecordingActive = isRecording
+        isMediaProjectionActive = isMediaProjection
+        startForegroundServiceNotification(isRecording, isMediaProjection)
+    }
+
+    private fun startForegroundServiceNotification(
+        isRecording: Boolean = isRecordingActive,
+        isMediaProjection: Boolean = isMediaProjectionActive
+    ) {
         val notification = buildNotification()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val type = if (isRecording) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            } else {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            if (isRecording) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
+            if (isMediaProjection) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             }
             startForeground(NOTIFICATION_ID, notification, type)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val type = if (isRecording) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            } else {
-                0
+            var type = 0
+            if (isRecording) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
+            if (isMediaProjection) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             }
             startForeground(NOTIFICATION_ID, notification, type)
         } else {
@@ -105,11 +129,19 @@ class FloatingBubbleService : Service() {
         private const val CHANNEL_ID = "gemini_companion_channel"
         private const val NOTIFICATION_ID = 1001
 
+        const val ACTION_START_TRANSLATION = "com.gemini.floatingcompanion.ACTION_START_TRANSLATION"
+        const val ACTION_STOP_TRANSLATION = "com.gemini.floatingcompanion.ACTION_STOP_TRANSLATION"
+        const val ACTION_SHOW_BUBBLE = "com.gemini.floatingcompanion.ACTION_SHOW_BUBBLE"
+
         @Volatile
         private var instance: FloatingBubbleService? = null
 
         fun setMicrophoneActive(context: Context, isRecording: Boolean) {
-            instance?.startForegroundServiceNotification(isRecording)
+            instance?.updateForegroundTypes(isRecording = isRecording)
+        }
+
+        fun setMediaProjectionActive(context: Context, isMediaProjection: Boolean) {
+            instance?.updateForegroundTypes(isMediaProjection = isMediaProjection)
         }
 
         fun start(context: Context) {

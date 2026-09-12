@@ -14,3 +14,7 @@
 .cxx
 local.properties
 app/build/
+release_snapshots/**/*.apk
+.brain/
+.geminiignore
+*.apk

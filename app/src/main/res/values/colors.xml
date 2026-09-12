@@ -14,4 +14,7 @@
     <color name="text_secondary">#475569</color>
     <color name="bubble_glow">#403B82F6</color>
     <color name="recording_glow">#66EF4444</color>
+    <color name="glass_bubble">#1A10B981</color>
+    <color name="emerald_green">#10B981</color>
+    <color name="emerald_dark">#047857</color>
 </resources>
