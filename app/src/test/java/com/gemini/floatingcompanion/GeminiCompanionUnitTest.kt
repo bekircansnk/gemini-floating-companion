@@ -25,17 +25,23 @@ class GeminiCompanionUnitTest {
 
     @Test
     fun testGeminiLiveSetupFrameJson() {
-        val model = "models/gemini-3.5-transcribe-live"
+        val model = "gemini-3.5-transcribe-live"
+        val cleanModel = if (model.startsWith("models/")) model else "models/$model"
         val languageCode = "tr"
 
         val setupJson = JSONObject().apply {
             val setupObj = JSONObject().apply {
-                put("model", model)
+                put("model", cleanModel)
                 put("generationConfig", JSONObject().apply {
                     put("responseModalities", JSONArray().apply { put("TEXT") })
                 })
                 put("inputAudioTranscription", JSONObject().apply {
-                    put("languageCodes", JSONArray().apply { put(languageCode) })
+                    val langArray = if (languageCode.isNotBlank()) {
+                        JSONArray().apply { put(languageCode) }
+                    } else {
+                        JSONArray()
+                    }
+                    put("languageCodes", langArray)
                 })
             }
             put("setup", setupObj)
@@ -50,33 +56,50 @@ class GeminiCompanionUnitTest {
     }
 
     @Test
-    fun testGeminiLiveFinishFrameJson() {
-        val finishJson = JSONObject().apply {
-            val clientContent = JSONObject().apply {
-                val turns = JSONArray().apply {
-                    val turn = JSONObject().apply {
-                        put("role", "user")
-                        put("parts", JSONArray().apply {
-                            put(JSONObject().apply {
-                                put("text", "Konuşmayı Türkçe metin olarak yazıya dök.")
-                            })
-                        })
-                    }
-                    put(turn)
+    fun testGeminiLiveAudioChunkOfficialJson() {
+        val base64DummyAudio = "UklGRi4AAABXQVZFZm10"
+        val chunkJson = JSONObject().apply {
+            val realtimeInput = JSONObject().apply {
+                val audio = JSONObject().apply {
+                    put("mimeType", "audio/pcm;rate=16000")
+                    put("data", base64DummyAudio)
                 }
-                put("turns", turns)
-                put("turnComplete", true)
+                put("audio", audio)
             }
-            put("clientContent", clientContent)
+            put("realtimeInput", realtimeInput)
+        }
+
+        val parsed = JSONObject(chunkJson.toString())
+        assertTrue(parsed.has("realtimeInput"))
+        val rt = parsed.getJSONObject("realtimeInput")
+        assertTrue(rt.has("audio"))
+        val audio = rt.getJSONObject("audio")
+        assertEquals("audio/pcm;rate=16000", audio.getString("mimeType"))
+        assertEquals(base64DummyAudio, audio.getString("data"))
+    }
+
+    @Test
+    fun testGeminiLiveAudioStreamEndJson() {
+        val finishJson = JSONObject().apply {
+            val realtimeInput = JSONObject().apply {
+                put("audioStreamEnd", true)
+            }
+            put("realtimeInput", realtimeInput)
         }
 
         val parsed = JSONObject(finishJson.toString())
-        assertTrue(parsed.has("clientContent"))
-        val cc = parsed.getJSONObject("clientContent")
-        assertTrue(cc.getBoolean("turnComplete"))
-        val turns = cc.getJSONArray("turns")
-        assertEquals(1, turns.length())
-        assertEquals("user", turns.getJSONObject(0).getString("role"))
+        assertTrue(parsed.has("realtimeInput"))
+        val rt = parsed.getJSONObject("realtimeInput")
+        assertTrue(rt.getBoolean("audioStreamEnd"))
+    }
+
+    @Test
+    fun testWebSocketUrlFormat() {
+        val apiKey = "AIzaSyTest123"
+        val url = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey"
+        assertTrue(url.contains("v1beta"))
+        assertTrue(url.contains("BidiGenerateContent"))
+        assertTrue(url.contains("key=AIzaSyTest123"))
     }
 
     @Test
@@ -94,8 +117,8 @@ class GeminiCompanionUnitTest {
     }
 
     @Test
-    fun testServerTranscriptionMessageParsing() {
-        val rawMessage = """
+    fun testServerTranscriptionInterimAndFinalParsing() {
+        val rawInterim = """
             {
                 "serverContent": {
                     "interimInputTranscription": {
@@ -105,9 +128,40 @@ class GeminiCompanionUnitTest {
             }
         """.trimIndent()
 
-        val root = JSONObject(rawMessage)
-        val serverContent = root.getJSONObject("serverContent")
-        val interim = serverContent.getJSONObject("interimInputTranscription").getString("text")
+        val rootInterim = JSONObject(rawInterim)
+        val interim = rootInterim.getJSONObject("serverContent").getJSONObject("interimInputTranscription").getString("text")
         assertEquals("Bugün hava çok", interim)
+
+        val rawFinal = """
+            {
+                "serverContent": {
+                    "inputTranscription": {
+                        "text": "Bugün hava çok güzel."
+                    }
+                }
+            }
+        """.trimIndent()
+
+        val rootFinal = JSONObject(rawFinal)
+        val finalized = rootFinal.getJSONObject("serverContent").getJSONObject("inputTranscription").getString("text")
+        assertEquals("Bugün hava çok güzel.", finalized)
+    }
+
+    @Test
+    fun testStreamingDeltaCalculation() {
+        var lastPasted = ""
+        val step1Text = "Merhaba"
+        val delta1 = if (step1Text.startsWith(lastPasted)) step1Text.substring(lastPasted.length) else step1Text
+        assertEquals("Merhaba", delta1)
+        lastPasted = step1Text
+
+        val step2Text = "Merhaba nasılsın"
+        val delta2 = if (step2Text.startsWith(lastPasted)) step2Text.substring(lastPasted.length) else step2Text
+        assertEquals(" nasılsın", delta2)
+        lastPasted = step2Text
+
+        val step3Text = "Merhaba nasılsınız efendim"
+        val delta3 = if (step3Text.startsWith(lastPasted)) step3Text.substring(lastPasted.length) else step3Text
+        assertEquals("ız efendim", delta3) // notice incremental suffix
     }
 }

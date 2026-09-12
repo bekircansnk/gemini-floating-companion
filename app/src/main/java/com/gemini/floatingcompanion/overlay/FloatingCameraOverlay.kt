@@ -40,6 +40,7 @@ import java.io.File
 class FloatingCameraOverlay(
     context: Context,
     private val scope: CoroutineScope,
+    private val initialMode: CameraMode = CameraMode.OCR_STRUCTURED,
     private val onClose: () -> Unit
 ) : FrameLayout(context), LifecycleOwner {
 
@@ -56,6 +57,7 @@ class FloatingCameraOverlay(
 
     private var currentMode: CameraMode = CameraMode.OCR_STRUCTURED
     private var imageCapture: ImageCapture? = null
+    private var cameraProvider: ProcessCameraProvider? = null
 
     val params: WindowManager.LayoutParams = WindowManager.LayoutParams(
         WindowManager.LayoutParams.MATCH_PARENT,
@@ -80,6 +82,7 @@ class FloatingCameraOverlay(
         btnClose = findViewById(R.id.btnCameraClose)
 
         setupListeners()
+        switchMode(initialMode)
         startCamera()
     }
 
@@ -90,6 +93,9 @@ class FloatingCameraOverlay(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        try {
+            cameraProvider?.unbindAll()
+        } catch (_: Exception) {}
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
     }
 
@@ -103,6 +109,9 @@ class FloatingCameraOverlay(
         }
 
         btnClose.setOnClickListener {
+            try {
+                cameraProvider?.unbindAll()
+            } catch (_: Exception) {}
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
             onClose()
         }
@@ -118,14 +127,14 @@ class FloatingCameraOverlay(
             tabOcr.backgroundTintList = ContextCompat.getColorStateList(context, R.color.gemini_blue)
             tabOcr.setTextColor(0xFFFFFFFF.toInt())
 
-            tabPdf.backgroundTintList = null
+            tabPdf.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
             tabPdf.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
             btnCapture.text = "📸 Fotoğraf Çek & Metni Yapıştır"
         } else {
             tabPdf.backgroundTintList = ContextCompat.getColorStateList(context, R.color.gemini_blue)
             tabPdf.setTextColor(0xFFFFFFFF.toInt())
 
-            tabOcr.backgroundTintList = null
+            tabOcr.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
             tabOcr.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
             btnCapture.text = "📄 Belgeyi Tara & PDF Olarak Paylaş"
         }
@@ -135,7 +144,8 @@ class FloatingCameraOverlay(
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             try {
-                val cameraProvider = cameraProviderFuture.get()
+                val provider = cameraProviderFuture.get()
+                cameraProvider = provider
 
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
@@ -147,8 +157,8 @@ class FloatingCameraOverlay(
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                provider.unbindAll()
+                provider.bindToLifecycle(
                     this,
                     cameraSelector,
                     preview,
@@ -211,6 +221,7 @@ class FloatingCameraOverlay(
                     result.onSuccess { structuredText ->
                         GeminiAccessibilityService.instance?.insertText(structuredText, isStreaming = false)
                         Toast.makeText(appContext, "Metin/Tablo doğrudan alana yapıştırıldı! ✨", Toast.LENGTH_SHORT).show()
+                        try { cameraProvider?.unbindAll() } catch (_: Exception) {}
                         onClose()
                     }.onFailure { error ->
                         Toast.makeText(appContext, "OCR Hatası: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -228,6 +239,7 @@ class FloatingCameraOverlay(
                     result.onSuccess { pdfFile ->
                         processor.sharePdf(pdfFile)
                         Toast.makeText(appContext, "PDF oluşturuldu, paylaşım menüsü açıldı! 📄", Toast.LENGTH_SHORT).show()
+                        try { cameraProvider?.unbindAll() } catch (_: Exception) {}
                         onClose()
                     }.onFailure { error ->
                         Toast.makeText(appContext, "PDF Hatası: ${error.localizedMessage}", Toast.LENGTH_LONG).show()

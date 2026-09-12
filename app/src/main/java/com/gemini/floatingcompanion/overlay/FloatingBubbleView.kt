@@ -35,6 +35,7 @@ class FloatingBubbleView(
     private val viewGlow: View
     private val bubbleContainer: View
     private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     var params: WindowManager.LayoutParams = WindowManager.LayoutParams(
         WindowManager.LayoutParams.WRAP_CONTENT,
@@ -84,7 +85,7 @@ class FloatingBubbleView(
                     touchStartY = event.rawY
                     isDragging = false
                     isLongPressed = false
-                    handler.postDelayed(longPressRunnable, 450)
+                    mainHandler.postDelayed(longPressRunnable, 450)
                     true
                 }
 
@@ -94,7 +95,7 @@ class FloatingBubbleView(
                     if (abs(dx) > 12 || abs(dy) > 12) {
                         if (!isDragging) {
                             isDragging = true
-                            handler.removeCallbacks(longPressRunnable)
+                            mainHandler.removeCallbacks(longPressRunnable)
                         }
                         params.x = initialX + dx
                         params.y = initialY + dy
@@ -104,7 +105,7 @@ class FloatingBubbleView(
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    handler.removeCallbacks(longPressRunnable)
+                    mainHandler.removeCallbacks(longPressRunnable)
                     if (!isDragging && !isLongPressed) {
                         triggerHaptic()
                         onBubbleClick()
@@ -115,7 +116,7 @@ class FloatingBubbleView(
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
-                    handler.removeCallbacks(longPressRunnable)
+                    mainHandler.removeCallbacks(longPressRunnable)
                     true
                 }
 

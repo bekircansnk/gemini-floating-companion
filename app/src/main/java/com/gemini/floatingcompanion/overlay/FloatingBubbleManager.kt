@@ -11,6 +11,7 @@ import com.gemini.floatingcompanion.data.CameraMode
 import com.gemini.floatingcompanion.data.PreferencesManager
 import com.gemini.floatingcompanion.live.AudioRecorderManager
 import com.gemini.floatingcompanion.live.GeminiLiveAudioClient
+import com.gemini.floatingcompanion.service.FloatingBubbleService
 import com.gemini.floatingcompanion.service.GeminiAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -130,6 +131,9 @@ class FloatingBubbleManager private constructor(private val context: Context) {
         isRecording = true
         bubbleView?.setState(BubbleState.LISTENING, "Bağlanıyor...")
 
+        // Update foreground service type to include microphone
+        FloatingBubbleService.setMicrophoneActive(context, true)
+
         // Tell accessibility service we are starting streaming
         GeminiAccessibilityService.instance?.startStreamingSession()
 
@@ -187,6 +191,9 @@ class FloatingBubbleManager private constructor(private val context: Context) {
         liveAudioClient?.finishSession()
         liveAudioClient = null
 
+        // Revert foreground service type back to specialUse
+        FloatingBubbleService.setMicrophoneActive(context, false)
+
         GeminiAccessibilityService.instance?.finishStreamingSession()
 
         scope.launch {
@@ -243,6 +250,7 @@ class FloatingBubbleManager private constructor(private val context: Context) {
             cameraOverlay = FloatingCameraOverlay(
                 context = context,
                 scope = scope,
+                initialMode = mode,
                 onClose = { closeCamera() }
             )
             windowManager.addView(cameraOverlay, cameraOverlay?.params)

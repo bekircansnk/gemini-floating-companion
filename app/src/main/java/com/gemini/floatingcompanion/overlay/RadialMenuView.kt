@@ -56,4 +56,12 @@ class RadialMenuView(
             onDismiss()
         }
     }
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.action == android.view.MotionEvent.ACTION_OUTSIDE) {
+            onDismiss()
+            return true
+        }
+        return super.onTouchEvent(event)
+    }
 }

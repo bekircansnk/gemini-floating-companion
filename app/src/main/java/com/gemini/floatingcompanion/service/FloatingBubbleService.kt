@@ -22,6 +22,7 @@ class FloatingBubbleService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         Log.d(TAG, "FloatingBubbleService created")
         createNotificationChannel()
         startForegroundServiceNotification()
@@ -34,7 +35,7 @@ class FloatingBubbleService : Service() {
         return START_STICKY
     }
 
-    private fun startForegroundServiceNotification() {
+    private fun buildNotification(): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
@@ -42,7 +43,7 @@ class FloatingBubbleService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.service_notification_title))
             .setContentText(getString(R.string.service_notification_text))
             .setSmallIcon(R.drawable.ic_gemini_sparkle)
@@ -50,13 +51,25 @@ class FloatingBubbleService : Service() {
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
+    private fun startForegroundServiceNotification(isRecording: Boolean = false) {
+        val notification = buildNotification()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val type = if (isRecording) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            }
+            startForeground(NOTIFICATION_ID, notification, type)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val type = if (isRecording) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            )
+            } else {
+                0
+            }
+            startForeground(NOTIFICATION_ID, notification, type)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -82,6 +95,7 @@ class FloatingBubbleService : Service() {
         Log.d(TAG, "FloatingBubbleService destroyed")
         bubbleManager?.destroy()
         bubbleManager = null
+        instance = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -90,6 +104,13 @@ class FloatingBubbleService : Service() {
         private const val TAG = "FloatingBubbleService"
         private const val CHANNEL_ID = "gemini_companion_channel"
         private const val NOTIFICATION_ID = 1001
+
+        @Volatile
+        private var instance: FloatingBubbleService? = null
+
+        fun setMicrophoneActive(context: Context, isRecording: Boolean) {
+            instance?.startForegroundServiceNotification(isRecording)
+        }
 
         fun start(context: Context) {
             val intent = Intent(context, FloatingBubbleService::class.java)

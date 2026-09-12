@@ -28,11 +28,37 @@ class DocumentScannerProcessor(private val context: Context) {
         applyCamScannerFilter: Boolean = true
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
-            val originalBitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+            val rawBitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
                 ?: return@withContext Result.failure(Exception("Görsel okunamadı."))
 
+            val originalBitmap = try {
+                val exif = android.media.ExifInterface(imageFile.absolutePath)
+                val orientation = exif.getAttributeInt(
+                    android.media.ExifInterface.TAG_ORIENTATION,
+                    android.media.ExifInterface.ORIENTATION_NORMAL
+                )
+                val degrees = when (orientation) {
+                    android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+                if (degrees != 0f) {
+                    val matrix = android.graphics.Matrix().apply { postRotate(degrees) }
+                    val rotated = Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true)
+                    if (rotated != rawBitmap) rawBitmap.recycle()
+                    rotated
+                } else {
+                    rawBitmap
+                }
+            } catch (_: Exception) {
+                rawBitmap
+            }
+
             val processedBitmap = if (applyCamScannerFilter) {
-                applyDocumentEnhanceFilter(originalBitmap)
+                val filtered = applyDocumentEnhanceFilter(originalBitmap)
+                if (filtered != originalBitmap) originalBitmap.recycle()
+                filtered
             } else {
                 originalBitmap
             }

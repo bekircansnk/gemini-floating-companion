@@ -46,7 +46,7 @@ class GeminiLiveAudioClient(
             return
         }
 
-        val url = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=$apiKey"
+        val url = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey"
         val request = Request.Builder().url(url).build()
 
         finalizedParts.clear()
@@ -86,20 +86,26 @@ class GeminiLiveAudioClient(
 
     private fun sendSetupFrame(ws: WebSocket) {
         try {
+            val cleanModel = if (model.startsWith("models/")) model else "models/$model"
             val setupJson = JSONObject().apply {
                 val setupObj = JSONObject().apply {
-                    put("model", model)
+                    put("model", cleanModel)
                     put("generationConfig", JSONObject().apply {
                         put("responseModalities", JSONArray().apply { put("TEXT") })
                     })
                     put("inputAudioTranscription", JSONObject().apply {
-                        put("languageCodes", JSONArray().apply { put(languageCode) })
+                        val langArray = if (languageCode.isNotBlank()) {
+                            JSONArray().apply { put(languageCode) }
+                        } else {
+                            JSONArray()
+                        }
+                        put("languageCodes", langArray)
                     })
                 }
                 put("setup", setupObj)
             }
             ws.send(setupJson.toString())
-            Log.d(TAG, "Setup frame sent for model: $model")
+            Log.d(TAG, "Setup frame sent for model: $cleanModel")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send setup frame", e)
         }
@@ -113,14 +119,11 @@ class GeminiLiveAudioClient(
             val base64Data = Base64.encodeToString(pcmBytes, Base64.NO_WRAP)
             val chunkJson = JSONObject().apply {
                 val realtimeInput = JSONObject().apply {
-                    val mediaChunks = JSONArray().apply {
-                        val media = JSONObject().apply {
-                            put("mimeType", "audio/pcm;rate=16000")
-                            put("data", base64Data)
-                        }
-                        put(media)
+                    val audio = JSONObject().apply {
+                        put("mimeType", "audio/pcm;rate=16000")
+                        put("data", base64Data)
                     }
-                    put("mediaChunks", mediaChunks)
+                    put("audio", audio)
                 }
                 put("realtimeInput", realtimeInput)
             }
@@ -134,30 +137,18 @@ class GeminiLiveAudioClient(
         val ws = webSocket ?: return
         try {
             val finishJson = JSONObject().apply {
-                val clientContent = JSONObject().apply {
-                    val turns = JSONArray().apply {
-                        val turn = JSONObject().apply {
-                            put("role", "user")
-                            put("parts", JSONArray().apply {
-                                put(JSONObject().apply {
-                                    put("text", "Konuşmayı Türkçe metin olarak yazıya dök.")
-                                })
-                            })
-                        }
-                        put(turn)
-                    }
-                    put("turns", turns)
-                    put("turnComplete", true)
+                val realtimeInput = JSONObject().apply {
+                    put("audioStreamEnd", true)
                 }
-                put("clientContent", clientContent)
+                put("realtimeInput", realtimeInput)
             }
             ws.send(finishJson.toString())
-            Log.d(TAG, "Finish frame sent")
+            Log.d(TAG, "audioStreamEnd sent")
 
-            // Wait 250ms event-driven timeout, then close safely
+            // Wait 350ms event-driven timeout for final inputTranscription, then close safely
             finishJob?.cancel()
             finishJob = scope.launch(Dispatchers.IO) {
-                delay(300)
+                delay(350)
                 disconnect()
             }
         } catch (e: Exception) {

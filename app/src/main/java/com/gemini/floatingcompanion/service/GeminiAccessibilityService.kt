@@ -22,6 +22,8 @@ class GeminiAccessibilityService : AccessibilityService() {
     private var baseTextBeforeStreaming = ""
     private var isStreamingActive = false
 
+    private var lastPastedStreamingText = ""
+
     private val hideDebounceRunnable = Runnable {
         if (!isAnyInputFocused()) {
             FloatingBubbleManager.getInstance(this)?.onInputFocusChanged(false)
@@ -35,6 +37,7 @@ class GeminiAccessibilityService : AccessibilityService() {
 
         val info = AccessibilityServiceInfo().apply {
             eventTypes = AccessibilityEvent.TYPE_VIEW_FOCUSED or
+                    AccessibilityEvent.TYPE_VIEW_CLICKED or
                     AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
                     AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                     AccessibilityEvent.TYPE_WINDOWS_CHANGED
@@ -51,7 +54,8 @@ class GeminiAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         when (event.eventType) {
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED,
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                 handler.removeCallbacks(hideDebounceRunnable)
                 val source = event.source
                 if (source != null && isEditableNode(source)) {
@@ -62,7 +66,8 @@ class GeminiAccessibilityService : AccessibilityService() {
                 }
             }
 
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
                 checkAndScheduleHide()
             }
 
@@ -77,18 +82,48 @@ class GeminiAccessibilityService : AccessibilityService() {
 
     private fun checkAndScheduleHide() {
         handler.removeCallbacks(hideDebounceRunnable)
-        handler.postDelayed(hideDebounceRunnable, 300)
+        handler.postDelayed(hideDebounceRunnable, 450)
     }
 
     private fun isAnyInputFocused(): Boolean {
-        val root = rootInActiveWindow ?: return false
-        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-        return if (focused != null && isEditableNode(focused)) {
-            updateActiveNode(focused)
-            true
-        } else {
-            false
-        }
+        // 1. Check cached active node if still valid and focused
+        try {
+            activeNode?.let { node ->
+                if (node.refresh() && node.isFocused && isEditableNode(node)) {
+                    return true
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 2. Check root in active window
+        try {
+            rootInActiveWindow?.let { root ->
+                val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                if (focused != null && isEditableNode(focused)) {
+                    updateActiveNode(focused)
+                    return true
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 3. Check all interactive windows (including soft keyboard / IME window detection)
+        try {
+            val windowList = windows
+            for (window in windowList) {
+                // If soft keyboard (Gboard etc.) is displayed, keep the bubble visible
+                if (window.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
+                    return true
+                }
+                val root = window.root ?: continue
+                val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                if (focused != null && isEditableNode(focused)) {
+                    updateActiveNode(focused)
+                    return true
+                }
+            }
+        } catch (_: Exception) {}
+
+        return false
     }
 
     private fun isEditableNode(node: AccessibilityNodeInfo): Boolean {
@@ -105,6 +140,7 @@ class GeminiAccessibilityService : AccessibilityService() {
 
     fun startStreamingSession() {
         isStreamingActive = true
+        lastPastedStreamingText = ""
         val targetNode = getTargetNode()
         baseTextBeforeStreaming = targetNode?.text?.toString() ?: ""
     }
@@ -112,20 +148,21 @@ class GeminiAccessibilityService : AccessibilityService() {
     fun finishStreamingSession() {
         isStreamingActive = false
         baseTextBeforeStreaming = ""
+        lastPastedStreamingText = ""
     }
 
     fun insertText(text: String, isStreaming: Boolean) {
         val targetNode = getTargetNode()
         if (targetNode == null) {
-            Log.w(TAG, "Cannot insert text: no target editable node found")
+            Log.w(TAG, "No target node found, saving text to clipboard as fallback")
+            copyToClipboard(text)
             return
         }
 
         try {
-            val textToInsert: String
             if (isStreaming) {
-                // If streaming, append incoming transcript piece cleanly to existing text
-                textToInsert = if (baseTextBeforeStreaming.isEmpty()) {
+                // Streaming text update
+                val textToInsert = if (baseTextBeforeStreaming.isEmpty()) {
                     text
                 } else {
                     "$baseTextBeforeStreaming $text"
@@ -135,25 +172,52 @@ class GeminiAccessibilityService : AccessibilityService() {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToInsert)
                 }
                 val success = targetNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-                if (!success) {
-                    pasteViaClipboard(text)
+                if (success) {
+                    lastPastedStreamingText = text
+                } else {
+                    // If ACTION_SET_TEXT failed, paste ONLY the delta to prevent cumulative duplication
+                    val delta = if (text.startsWith(lastPastedStreamingText)) {
+                        text.substring(lastPastedStreamingText.length)
+                    } else {
+                        text
+                    }
+                    if (delta.isNotEmpty()) {
+                        pasteViaClipboard(delta)
+                        lastPastedStreamingText = text
+                    }
                 }
             } else {
-                // For OCR tables, formatted markdown or final notes, paste via clipboard for maximum compatibility
-                pasteViaClipboard(text)
+                // For OCR tables, formatted markdown or final notes:
+                copyToClipboard(text)
+                val pasteSuccess = targetNode.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                if (!pasteSuccess) {
+                    val currentText = targetNode.text?.toString() ?: ""
+                    val combined = if (currentText.isBlank()) text else "$currentText\n\n$text"
+                    val args = Bundle().apply {
+                        putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, combined)
+                    }
+                    targetNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error inserting text into node", e)
-            pasteViaClipboard(text)
+            copyToClipboard(text)
+        }
+    }
+
+    private fun copyToClipboard(text: String) {
+        try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("GeminiCompanion", text)
+            clipboard.setPrimaryClip(clip)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error copying to clipboard", e)
         }
     }
 
     private fun pasteViaClipboard(text: String) {
         try {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("GeminiCompanion", text)
-            clipboard.setPrimaryClip(clip)
-
+            copyToClipboard(text)
             val targetNode = getTargetNode()
             targetNode?.performAction(AccessibilityNodeInfo.ACTION_PASTE)
         } catch (e: Exception) {
@@ -162,15 +226,32 @@ class GeminiAccessibilityService : AccessibilityService() {
     }
 
     private fun getTargetNode(): AccessibilityNodeInfo? {
-        if (activeNode != null && activeNode?.refresh() == true && isEditableNode(activeNode!!)) {
-            return activeNode
-        }
-        val root = rootInActiveWindow ?: return null
-        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-        if (focused != null && isEditableNode(focused)) {
-            activeNode = focused
-            return focused
-        }
+        try {
+            if (activeNode != null && activeNode?.refresh() == true && isEditableNode(activeNode!!)) {
+                return activeNode
+            }
+        } catch (_: Exception) {}
+
+        try {
+            val root = rootInActiveWindow
+            val focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            if (focused != null && isEditableNode(focused)) {
+                activeNode = focused
+                return focused
+            }
+        } catch (_: Exception) {}
+
+        try {
+            for (window in windows) {
+                val root = window.root ?: continue
+                val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                if (focused != null && isEditableNode(focused)) {
+                    activeNode = focused
+                    return focused
+                }
+            }
+        } catch (_: Exception) {}
+
         return null
     }
 

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 
 class GeminiVisionAnalyzer(
     private val apiKey: String,
-    private val model: String = "models/gemini-2.5-flash"
+    private val model: String = "models/gemini-3.8-flash"
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -36,20 +36,47 @@ class GeminiVisionAnalyzer(
         }
 
         try {
-            // Compress and scale bitmap if needed to stay within optimal size
-            val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+            val rawBitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
                 ?: return@withContext Result.failure(Exception("Görsel okunamadı."))
 
-            val scaledBitmap = if (bitmap.width > 1600 || bitmap.height > 1600) {
-                val ratio = 1600f / maxOf(bitmap.width, bitmap.height)
-                Bitmap.createScaledBitmap(
-                    bitmap,
-                    (bitmap.width * ratio).toInt(),
-                    (bitmap.height * ratio).toInt(),
-                    true
+            // Correct EXIF orientation so image is upright for Gemini OCR
+            val uprightBitmap = try {
+                val exif = android.media.ExifInterface(imageFile.absolutePath)
+                val orientation = exif.getAttributeInt(
+                    android.media.ExifInterface.TAG_ORIENTATION,
+                    android.media.ExifInterface.ORIENTATION_NORMAL
                 )
+                val degrees = when (orientation) {
+                    android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+                if (degrees != 0f) {
+                    val matrix = android.graphics.Matrix().apply { postRotate(degrees) }
+                    val rotated = Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true)
+                    if (rotated != rawBitmap) rawBitmap.recycle()
+                    rotated
+                } else {
+                    rawBitmap
+                }
+            } catch (_: Exception) {
+                rawBitmap
+            }
+
+            // Compress and scale bitmap if needed to stay within optimal size
+            val scaledBitmap = if (uprightBitmap.width > 1600 || uprightBitmap.height > 1600) {
+                val ratio = 1600f / maxOf(uprightBitmap.width, uprightBitmap.height)
+                Bitmap.createScaledBitmap(
+                    uprightBitmap,
+                    (uprightBitmap.width * ratio).toInt(),
+                    (uprightBitmap.height * ratio).toInt(),
+                    true
+                ).also {
+                    if (it != uprightBitmap) uprightBitmap.recycle()
+                }
             } else {
-                bitmap
+                uprightBitmap
             }
 
             val outputStream = ByteArrayOutputStream()
