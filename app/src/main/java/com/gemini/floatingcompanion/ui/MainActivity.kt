@@ -1,12 +1,14 @@
 package com.gemini.floatingcompanion.ui
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -31,9 +33,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Key
@@ -120,9 +125,12 @@ fun MainScreen() {
     val prefs = remember { PreferencesManager.getInstance(context) }
     val keyManager = remember { GeminiApiKeyManager.getInstance() }
 
-    var useVaultPool by remember { mutableStateOf(prefs.useVaultPool) }
-    var customApiKey by remember { mutableStateOf(prefs.customApiKey) }
-    var isApiKeyVisible by remember { mutableStateOf(false) }
+    var customKeysList by remember {
+        mutableStateOf<List<String>>(
+            prefs.customApiKeys.ifEmpty { listOf("") }
+        )
+    }
+    var visibleKeyIndices by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var activeKeyInfo by remember { mutableStateOf(keyManager.getActiveKeyInfo()) }
 
     var isTestingConnection by remember { mutableStateOf(false) }
@@ -240,7 +248,7 @@ fun MainScreen() {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Cam Bento Akıllı Baloncuk • Canlı Ses Dikte • 6-Key Failover • Akıllı OCR • Canlı Video Çevirisi",
+                        text = "Akıllı Kayan Baloncuk • Canlı Ses Dikte • Dönüşümlü API Havuzu • Belge Tarama • Canlı Video Çevirisi",
                         fontSize = 13.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
@@ -251,7 +259,7 @@ fun MainScreen() {
 
             // CENTRAL VAULT & FAILOVER POOL CARD
             Text(
-                text = "Gemini API Vault & Failover Havuzu",
+                text = "Gemini API Yönetimi (Vault Havuzu)",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -265,110 +273,174 @@ fun MainScreen() {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    val availableVaultKeys = remember { keyManager.getAllKeysStatus() }
-
-                    if (availableVaultKeys.isNotEmpty()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Key,
-                                    contentDescription = "Vault",
-                                    tint = GeminiBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Merkezi Vault Havuzu",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp
-                                )
-                            }
-                            Switch(
-                                checked = useVaultPool,
-                                onCheckedChange = {
-                                    useVaultPool = it
-                                    prefs.useVaultPool = it
-                                }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Key,
+                                contentDescription = "Vault",
+                                tint = GeminiBlue,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Merkezi API Vault Havuzu",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    if (useVaultPool && availableVaultKeys.isNotEmpty()) {
-                        Box(
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Kesintisiz çeviri için birden fazla Gemini API anahtarı ekleyebilirsiniz. Anahtarlarınız yalnızca kendi cihazınızda güvenle saklanır, dışarıya aktarılmaz. Kota dolduğunda (429) sıradaki anahtara otomatik geçilir.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Çoklu API Anahtarı Satırları
+                    customKeysList.forEachIndexed { index, keyVal ->
+                        val isVisible = visibleKeyIndices.contains(index)
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF10B981).copy(alpha = 0.12f))
-                                .padding(12.dp)
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF10B981))
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Aktif: ${activeKeyInfo.name}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF047857)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Key: ${GeminiApiKeyManager.maskKey(activeKeyInfo.key)} • Tür: ${activeKeyInfo.type.uppercase()} • Öncelik: ${activeKeyInfo.priority}",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF065F46)
-                                )
-                                Text(
-                                    text = "Başarılı İstek: ${activeKeyInfo.successCount} • Hata/Rotasyon: ${activeKeyInfo.failureCount}",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF047857).copy(alpha = 0.8f)
-                                )
-                            }
+                            OutlinedTextField(
+                                value = keyVal,
+                                onValueChange = { newVal ->
+                                    val updated = customKeysList.toMutableList()
+                                    updated[index] = newVal
+                                    customKeysList = updated
+                                },
+                                label = { Text("API Anahtarı ${index + 1}") },
+                                placeholder = { Text("AIzaSy...") },
+                                visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                singleLine = true,
+                                trailingIcon = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = {
+                                            visibleKeyIndices = if (isVisible) {
+                                                visibleKeyIndices - index
+                                            } else {
+                                                visibleKeyIndices + index
+                                            }
+                                        }) {
+                                            Icon(
+                                                imageVector = if (isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                                contentDescription = "Göster/Gizle",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (customKeysList.size > 1) {
+                                            IconButton(onClick = {
+                                                val updated = customKeysList.toMutableList()
+                                                updated.removeAt(index)
+                                                customKeysList = updated
+                                                visibleKeyIndices = visibleKeyIndices.filter { it != index }.map { if (it > index) it - 1 else it }.toSet()
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Sil",
+                                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Ekle ve Kaydet Butonları
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                customKeysList = customKeysList + ""
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Ekle", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Anahtar Ekle", fontSize = 12.sp)
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Havuz Durumu: ${availableVaultKeys.size} Anahtar devrede. 429 Rate Limit veya kota aşımında sistem sıradaki anahtara sıfır kesintiyle otomatik geçer.",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        OutlinedTextField(
-                            value = customApiKey,
-                            onValueChange = {
-                                customApiKey = it
-                                prefs.customApiKey = it
+                        Button(
+                            onClick = {
+                                val clean = customKeysList.map { it.trim() }.filter { it.isNotBlank() }
+                                prefs.saveCustomApiKeys(clean)
+                                visibleKeyIndices = emptySet() // Kaydedilince anında gizle
+                                activeKeyInfo = keyManager.getActiveKeyInfo()
+                                Toast.makeText(context, "API anahtarları cihaza güvenle kaydedildi!", Toast.LENGTH_SHORT).show()
                             },
-                            label = { Text("Özel Gemini API Anahtarı") },
-                            placeholder = { Text("AIzaSy... veya AQ....") },
-                            visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { isApiKeyVisible = !isApiKeyVisible }) {
-                                    Icon(
-                                        imageVector = if (isApiKeyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = "Görünürlük"
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true
-                        )
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GeminiPurple),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = "Kaydet", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Kaydet & Gizle", fontSize = 12.sp)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
+                    // Aktif Anahtar Canlı Durum Kartı
+                    val allKeys = keyManager.getAllKeysStatus()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF10B981).copy(alpha = 0.12f))
+                            .padding(12.dp)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Aktif: ${activeKeyInfo.name}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF047857)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Key: ${GeminiApiKeyManager.maskKey(activeKeyInfo.key)} • Tür: ${activeKeyInfo.type.uppercase()} • Havuz: ${allKeys.size} Anahtar",
+                                fontSize = 11.sp,
+                                color = Color(0xFF065F46)
+                            )
+                            Text(
+                                text = "Başarılı İstek: ${activeKeyInfo.successCount} • Hata/Rotasyon: ${activeKeyInfo.failureCount}",
+                                fontSize = 10.sp,
+                                color = Color(0xFF047857).copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Test ve Rotasyon Butonları
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -380,7 +452,7 @@ fun MainScreen() {
                                 scope.launch {
                                     val start = System.currentTimeMillis()
                                     val result = testGeminiApiLive(
-                                        apiKey = if (useVaultPool) keyManager.getActiveApiKey() else customApiKey
+                                        apiKey = keyManager.getActiveApiKey()
                                     )
                                     val duration = System.currentTimeMillis() - start
                                     isTestingConnection = false
@@ -416,20 +488,18 @@ fun MainScreen() {
                             }
                         }
 
-                        if (useVaultPool) {
-                            Button(
-                                onClick = {
-                                    activeKeyInfo = keyManager.rotateToNextKey("Manuel Kullanıcı Rotasyonu")
-                                    Toast.makeText(context, "Sıradaki Key: ${activeKeyInfo.name}", Toast.LENGTH_SHORT).show()
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = GeminiPurple),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Döndür", modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Key Döndür", fontSize = 11.sp)
-                            }
+                        Button(
+                            onClick = {
+                                activeKeyInfo = keyManager.rotateToNextKey("Kullanıcı Rotasyonu")
+                                Toast.makeText(context, "Sıradaki: ${activeKeyInfo.name}", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GeminiPurple),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Döndür", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Sıradaki Key", fontSize = 11.sp)
                         }
                     }
 
@@ -545,7 +615,7 @@ fun MainScreen() {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 6. Xiaomi / HyperOS Survivability
+            // 6. Arka Planda Çalışma & Pil Koruması (Evrensel Tüm Cihazlar)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -555,31 +625,31 @@ fun MainScreen() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.PowerSettingsNew,
-                            contentDescription = "HyperOS",
+                            contentDescription = "Pil Optimizasyonu",
                             tint = GeminiPurple
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Xiaomi / HyperOS Dayanıklılık",
+                            text = "Arka Planda Çalışma & Pil Koruması",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Servisin arka planda kapanmaması için 'Otomatik Başlatma' (Autostart) ve Pil Kısıtlaması 'Kısıtlama Yok' seçilmelidir.",
+                        text = "Uygulamanın video izlerken veya yazı yazarken kapanmaması için pil kısıtlamasının 'Kısıtlama Yok' (Sınırsız) olarak seçilmesi ve varsa 'Otomatik Başlatma' izninin verilmesi önerilir.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            openXiaomiOptimizationSettings(context)
+                            openOptimizationSettings(context)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = GeminiPurple),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Pil & Başlangıç Ayarlarını Aç", fontSize = 12.sp)
+                        Text("Pil & Arka Plan Ayarlarını Aç", fontSize = 12.sp)
                     }
                 }
             }
@@ -864,27 +934,73 @@ private suspend fun testGeminiApiLive(apiKey: String): Result<String> = withCont
     }
 }
 
-private fun openXiaomiOptimizationSettings(context: Context) {
-    try {
-        val intent = Intent().apply {
-            setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        context.startActivity(intent)
-    } catch (_: Exception) {
+private fun openOptimizationSettings(context: Context) {
+    val manufacturer = Build.MANUFACTURER.lowercase()
+    var opened = false
+
+    // 1. Markaya Özel Autostart & Yönetici Ekranları
+    if (manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco")) {
+        try {
+            val intent = Intent().apply {
+                setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            opened = true
+        } catch (_: Exception) {}
+    } else if (manufacturer.contains("samsung")) {
+        try {
+            val intent = Intent().apply {
+                component = ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            opened = true
+        } catch (_: Exception) {}
+    } else if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
+        try {
+            val intent = Intent().apply {
+                component = ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            opened = true
+        } catch (_: Exception) {}
+    }
+
+    // 2. Android Standart Pil Optimizasyonu Muafiyet Ekranı
+    if (!opened) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+                val isIgnoring = powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+                val action = if (!isIgnoring) {
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                } else {
+                    Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+                }
+                val intent = Intent(action).apply {
+                    if (action == Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(intent)
+                opened = true
             }
-        } catch (_: Exception) {
+        } catch (_: Exception) {}
+    }
+
+    // 3. Genel Uygulama Ayarları Fallback
+    if (!opened) {
+        try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:${context.packageName}")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "Pil ayarları açılamadı", Toast.LENGTH_SHORT).show()
         }
     }
 }

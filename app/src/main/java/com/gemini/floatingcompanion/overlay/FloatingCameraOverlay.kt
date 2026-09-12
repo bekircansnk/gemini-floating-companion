@@ -301,7 +301,7 @@ class FloatingCameraOverlay(
                 val processor = DocumentScannerProcessor(appContext)
                 val result = processor.processAndExportPdf(
                     imageFile = file,
-                    applyCamScannerFilter = true,
+                    applyEnhancementFilter = true,
                     autoCropEdges = true
                 )
                 file.delete()

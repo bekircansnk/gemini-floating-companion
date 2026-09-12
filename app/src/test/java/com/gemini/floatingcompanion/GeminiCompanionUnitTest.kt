@@ -234,16 +234,12 @@ class GeminiCompanionUnitTest {
         val candidates = listOf(
             preferred,
             "gemini-3.8-flash",
-            "gemini-2.5-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-flash-latest"
+            "gemini-3.5-flash-lite"
         ).distinct()
 
-        assertEquals(4, candidates.size)
+        assertEquals(2, candidates.size)
         assertEquals("gemini-3.8-flash", candidates[0])
-        assertEquals("gemini-2.5-flash", candidates[1])
-        assertEquals("gemini-3.5-flash-lite", candidates[2])
-        assertEquals("gemini-flash-latest", candidates[3])
+        assertEquals("gemini-3.5-flash-lite", candidates[1])
     }
 
     @Test

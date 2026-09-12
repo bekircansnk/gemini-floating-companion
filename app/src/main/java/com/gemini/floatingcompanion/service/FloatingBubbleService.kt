@@ -35,7 +35,7 @@ class FloatingBubbleService : Service() {
         when (intent?.action) {
             ACTION_START_TRANSLATION -> bubbleManager?.startLiveVideoTranslation()
             ACTION_STOP_TRANSLATION -> bubbleManager?.stopLiveVideoTranslation()
-            ACTION_SHOW_BUBBLE -> bubbleManager?.showBubble()
+            ACTION_SHOW_BUBBLE -> bubbleManager?.showBubble(force = true)
         }
         return START_STICKY
     }
@@ -48,11 +48,25 @@ class FloatingBubbleService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
+        val showBubbleIntent = PendingIntent.getService(
+            this,
+            1,
+            Intent(this, FloatingBubbleService::class.java).apply {
+                action = ACTION_SHOW_BUBBLE
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.service_notification_title))
             .setContentText(getString(R.string.service_notification_text))
             .setSmallIcon(R.drawable.ic_gemini_sparkle)
             .setContentIntent(pendingIntent)
+            .addAction(
+                R.drawable.ic_gemini_sparkle,
+                getString(R.string.notification_action_show_bubble),
+                showBubbleIntent
+            )
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()

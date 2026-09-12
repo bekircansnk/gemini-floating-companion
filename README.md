@@ -1,5 +1,5 @@
 # 🌟 Gemini Floating Companion (Android)
-### 🫧 Cam Bento Kayan Baloncuk • 🎙️ Canlı Ses Dikte • 📸 Gemini 3.8/2.5 Flash Akıllı OCR • 📄 CamScanner Renkli Belge & PDF
+### 🫧 Akıllı Kayan Cam Baloncuk • 🎙️ Canlı Ses Dikte • 📸 Gemini 3.8 Flash Görsel OCR • 📄 Renkli Belge & PDF Motoru
 
 [![GitHub Stars](https://img.shields.io/github/stars/bekircansnk/gemini-floating-companion?style=social)](https://github.com/bekircansnk/gemini-floating-companion)
 [![Android Min SDK](https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
@@ -9,7 +9,7 @@
 
 ---
 
-**Gemini Floating Companion**, modern Android (özellikle Xiaomi HyperOS / MIUI) cihazlar için geliştirilmiş açık kaynaklı, ultra hafif (< 23MB) ve sıfır arka plan çöküşlü yeni nesil bir yapay zeka asistanıdır. Gboard ve diğer klavyelerinizden ödün vermeden; sadece yazı yazarken beliren, sesinizi gerçek zamanlı harfe döken ve kameranızla çektiğiniz belgeleri/tabloları anında aktif metin kutunuza yapıştıran kusursuz bir deneyim sunar.
+**Gemini Floating Companion**, Android cihazlar için geliştirilmiş açık kaynaklı, ultra hafif (< 23MB) ve sıfır arka plan çöküşlü yeni nesil bir yapay zeka asistanıdır. Gboard ve diğer klavyelerinizden ödün vermeden; sadece yazı yazarken beliren, sesinizi gerçek zamanlı harfe döken ve kameranızla çektiğiniz belgeleri/tabloları anında aktif metin kutunuza yapıştıran kusursuz bir deneyim sunar.
 
 ---
 
@@ -18,7 +18,20 @@
 | 1. 🫧 Kayan Cam Radyal Menü | 2. 📸 Klavyeyle Uyumlu Canlı OCR | 3. ✅ Aktif Mesaja Anında Yapıştırma |
 | :---: | :---: | :---: |
 | <img src="docs/images/feature-radial-menu.png" width="280" alt="Radyal Menü" /> | <img src="docs/images/feature-camera-ocr.png" width="280" alt="Kamera OCR" /> | <img src="docs/images/feature-ocr-result.png" width="280" alt="Yapıştırma Sonucu" /> |
-| *Baloncuğa uzun basıldığında açılan 4 yönlü hızlı eylem menüsü.* | *Gboard klavyesi açıkken dikey marjini koruyan cam vizör.* | *Çekim bittiği an panoya kopyalanıp WhatsApp'a doğrudan yazılan metin.* |
+| *Baloncuğa uzun basıldığında açılan 4 yönlü hızlı eylem menüsü.* | *Gboard klavyesi açıkken dikey marjini koruyan cam vizör.* | *Çekim bittiği an panoya kopyalanıp mesaj kutusuna doğrudan yazılan metin.* |
+
+---
+
+## 🧠 Kullanılan Yapay Zeka Modelleri
+
+Uygulama doğrudan resmi **Google Gemini API** altyapısını kullanır ve hiçbir aracı sunucuya ihtiyaç duymaz:
+
+| Model | Kullanım Alanı | Protokol | Avantajı |
+| :--- | :--- | :--- | :--- |
+| **`models/gemini-3.8-flash`** | Görsel OCR & Tablo/Veri Yapılandırma | REST / JSON | Karmaşık tabloları, el yazılarını ve Türkçe karakterleri %100 doğrulukla Markdown'a dönüştürür. |
+| **`models/gemini-3.5-flash-lite`** | Hızlı OCR Yedeği & Hızlı Bağlantı Doğrulama | REST / JSON | Yüksek kota limitleri ve milisaniye seviyesinde hızlı yanıt kabiliyeti. |
+| **`models/gemini-3.5-transcribe-live`** | Gerçek Zamanlı Canlı Ses Dikte | WebSocket (16kHz PCM) | Konuşmanın bitmesini beklemeden kelimeleri anında metin kutusuna döker. |
+| **`models/gemini-3.5-live-translate-preview`** | Sistem/Video Sesinden Canlı Çeviri | WebSocket (Bidi Stream) | YouTube veya video sesini yakalayarak Türkçe altyazı ve sesli çeviri üretir. |
 
 ---
 
@@ -38,14 +51,14 @@
 - Tabloları temiz Markdown ızgarasına (`| Başlık |`), yapılacak işleri görev listelerine (`- [ ]`) dönüştürür.
 - Metin hem panoya alınır hem de mesaj kutusuna sessizce yapıştırılır.
 
-### 4. 📄 CamScanner Tarzı Renkli Belge & PDF Paylaşımı
-- Çekilen belgenin masa arka planını kırpar (otomatik köşe tespiti).
-- Siyah-beyaz binarizasyon yerine resmi mühürleri, renkli imzaları ve fotoğrafları canlı tutan "Magic Color" filtresi uygular.
-- Tek tıkla A4 PDF oluşturup WhatsApp/Telegram/Mail paylaşım sayfasını (`ACTION_SEND`) tetikler.
+### 4. 📄 Akıllı Renkli Belge Tarayıcı & PDF Paylaşımı
+- Çekilen belgenin masa veya zemin arka planını otomatik tespit ederek kırpar.
+- Siyah-beyaz karartma yerine resmi mühürleri, renkli imzaları ve fotoğrafları canlı tutan Magic Color filtreleme uygular.
+- Tek tıkla yüksek çözünürlüklü A4 PDF oluşturup WhatsApp/Telegram/Mail paylaşım sayfasını (`ACTION_SEND`) tetikler.
 
-### 5. 🛡️ Kesintisiz API Failover Havuzu (Google AI Studio)
-- Birden fazla API anahtarı arasında yük dengeler.
-- `gemini-3.8-flash` yoğunluk durumunda (HTTP 503 Spike) veya kota aşımında (429) otomatik olarak `gemini-2.5-flash` ve `gemini-3.5-flash-lite` modellerine geçerek işlemi asla yarıda bırakmaz.
+### 5. 🛡️ Kesintisiz API Failover & Rotasyon Havuzu
+- `GeminiApiKeyManager` ile çoklu API anahtarı yönetimi.
+- `gemini-3.8-flash` yoğunluk anında (HTTP 503) veya kota aşımında (429) otomatik olarak `gemini-3.5-flash-lite` modeline kesintisiz geçiş yapar.
 
 ---
 

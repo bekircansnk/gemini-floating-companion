@@ -10,4 +10,6 @@
     <string name="action_vision_ocr">Akıllı OCR</string>
     <string name="action_doc_scan">PDF Belge</string>
     <string name="action_video_translate">Video Çeviri</string>
+    <string name="notification_action_show_bubble">Baloncuğu Göster</string>
+    <string name="bubble_snoozed_toast">Baloncuk kapatıldı. Bildirimden tekrar açabilirsiniz.</string>
 </resources>

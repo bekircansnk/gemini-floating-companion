@@ -52,7 +52,7 @@ Google'ın `gemini-3.5-live-translate-preview` modeli standart chat Live API'sin
    - Yalnızca `setup` mesajı iletilir.
    - `setupComplete` alındığı anda soket kapatılır (0 jeton tüketimi).
 2. **Sesli Konuşma & Metin Testi**:
-   - Ultra hafif `gemini-3.5-flash-lite` (yedek `gemini-2.5-flash`) modeline tek jetonluk ping atılır.
+   - Ultra hafif `gemini-3.5-flash-lite` modeline tek jetonluk ping atılır.
 3. İki servis arayüzde ayrı ayrı raporlanır.
 
 ---

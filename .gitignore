@@ -18,3 +18,5 @@ release_snapshots/**/*.apk
 .brain/
 .geminiignore
 *.apk
+*.idsig
+release_signed/

@@ -8,7 +8,7 @@
 - **Temel Yetenekler:**
   1. Gerçek Zamanlı Canlı Ses Dikte (Gemini Live API - 16kHz PCM WebSocket)
   2. Akıllı Yüzen Kamera & OCR (Gemini 3.8 Flash ile Markdown Tablosu & Todo çıkarma)
-  3. CamScanner Algoritması & Tek Tuşla A4 PDF Üretimi / WhatsApp Paylaşımı
+  3. Renk Korumalı Belge İyileştirme Algoritması & Tek Tuşla A4 PDF Üretimi / WhatsApp Paylaşımı
   4. Klavye / Metin Alanı Odak Algılama (`AccessibilityService`)
 
 ---

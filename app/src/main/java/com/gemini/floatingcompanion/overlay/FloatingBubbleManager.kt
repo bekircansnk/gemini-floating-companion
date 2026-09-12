@@ -11,6 +11,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.gemini.floatingcompanion.R
 import com.gemini.floatingcompanion.data.BubbleState
 import com.gemini.floatingcompanion.data.CameraMode
 import com.gemini.floatingcompanion.data.GeminiApiKeyManager
@@ -59,11 +60,19 @@ class FloatingBubbleManager private constructor(private val context: Context) {
     private var latestSubtitleText: String = ""
     var userDeclinedMediaProjection = false
 
+    // Kullanıcı baloncuğu kapatma çarpısına sürüklediğinde (Explicit Dismiss)
+    // arka plandaki klavye/video eventlerinin baloncuğu anında pırpır ettirip yeniden açmasını engellemek için
+    // 30 dakikalık geçici susturma (snooze) mekanizması
+    private var userDismissedUntilEpoch = 0L
+    private val SNOOZE_DURATION_MS = 30 * 60 * 1000L // 30 dakika
+
     fun onInputFocusChanged(isFocused: Boolean) {
         if (!prefs.isAutoShowOnKeyboard) return
 
         scope.launch {
             if (isFocused) {
+                // Kullanıcı manuel kapattıysa klavye açılsa bile otomatik açma
+                if (System.currentTimeMillis() < userDismissedUntilEpoch) return@launch
                 showBubble()
             } else {
                 // If user is currently dictating or camera/radial menu/video translation is open, keep bubble alive
@@ -78,6 +87,8 @@ class FloatingBubbleManager private constructor(private val context: Context) {
         isVideoAppForeground = isVideo
         scope.launch {
             if (isVideo) {
+                // Kullanıcı manuel kapattıysa video uygulamasına geçilse bile otomatik açma
+                if (System.currentTimeMillis() < userDismissedUntilEpoch) return@launch
                 showBubbleForVideo()
             } else {
                 if (isTranslatingVideo) {
@@ -90,13 +101,23 @@ class FloatingBubbleManager private constructor(private val context: Context) {
     }
 
     fun showBubbleForVideo() {
+        if (System.currentTimeMillis() < userDismissedUntilEpoch) return
         showBubble()
         if (!isTranslatingVideo && !isRecording) {
             bubbleView?.setState(BubbleState.VIDEO_DETECTED, "Çevir")
         }
     }
 
-    fun showBubble() {
+    fun showBubble(force: Boolean = false) {
+        if (!force && System.currentTimeMillis() < userDismissedUntilEpoch) {
+            Log.d(TAG, "showBubble atlandı: Kullanıcı tarafından kapatıldı (Snooze aktif)")
+            return
+        }
+        // Manuel bildirimden veya zorunlu olarak çağrıldıysa snooze sıfırlanır
+        if (force) {
+            userDismissedUntilEpoch = 0L
+        }
+
         if (!Settings.canDrawOverlays(context)) {
             Log.w(TAG, "Cannot show bubble: overlay permission not granted")
             return
@@ -135,7 +156,9 @@ class FloatingBubbleManager private constructor(private val context: Context) {
                     onDragEnd = { isOverCloseTarget ->
                         closeTargetView?.hide()
                         if (isOverCloseTarget) {
-                            Log.d(TAG, "Baloncuk çarpıya sürüklendi ve başarıyla kapatıldı")
+                            Log.d(TAG, "Baloncuk çarpıya sürüklendi ve başarıyla kapatıldı (30 dk snooze)")
+                            userDismissedUntilEpoch = System.currentTimeMillis() + SNOOZE_DURATION_MS
+                            Toast.makeText(context, context.getString(R.string.bubble_snoozed_toast), Toast.LENGTH_SHORT).show()
                             if (isTranslatingVideo) {
                                 stopLiveVideoTranslation()
                             }
@@ -510,7 +533,7 @@ class FloatingBubbleManager private constructor(private val context: Context) {
 
         val result = keyManager.executeWithFailover<String>(tag = "AudioRestFallback", maxRetries = 4) { activeKey: String ->
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$activeKey"
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$activeKey"
 
                 val json = JSONObject().apply {
                     put("contents", JSONArray().apply {

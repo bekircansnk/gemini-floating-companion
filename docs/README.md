@@ -15,8 +15,8 @@ Gemini Floating Companion, Xiaomi 13 (Android 14 / HyperOS) başta olmak üzere 
 | `FloatingBubbleView` | `overlay/FloatingBubbleView.kt` | Minimalist dairesel baloncuk UI'ı. Tek tık (dikte/çeviri), uzun basış (radyal menü), kenara yapışma (snap-to-edge). |
 | `RadialMenuView` | `overlay/RadialMenuView.kt` | 4 çekirdek aksiyonlu cam bento menü: Canlı Dikte, Akıllı OCR, PDF Belge, Video Çeviri. |
 | `FloatingCameraOverlay` | `overlay/FloatingCameraOverlay.kt` | CameraX tabanlı metin/belge yakalama arayüzü. Klavye üstünde kalacak şekilde optimize edilmiş cam kart. |
-| `GeminiVisionAnalyzer` | `vision/GeminiVisionAnalyzer.kt` | Çok modelleri failover zinciri (`gemini-3.8-flash` -> `gemini-2.5-flash` -> `gemini-3.5-flash-lite`). Markdown tablo & liste korumalı OCR. |
-| `DocumentScannerProcessor` | `vision/DocumentScannerProcessor.kt` | Belge köşe tespiti (kontur analizi), renk korumalı CamScanner Magic Color filtresi, yüksek çözünürlüklü A4 PDF oluşturma ve paylaşma. |
+| `GeminiVisionAnalyzer` | `vision/GeminiVisionAnalyzer.kt` | Çok modelleri failover zinciri (`gemini-3.8-flash` -> `gemini-3.5-flash-lite`). Markdown tablo & liste korumalı OCR. |
+| `DocumentScannerProcessor` | `vision/DocumentScannerProcessor.kt` | Belge köşe tespiti (kontur analizi), renk korumalı Magic Color filtresi, yüksek çözünürlüklü A4 PDF oluşturma ve paylaşma. |
 | `GeminiApiKeyManager` | `data/GeminiApiKeyManager.kt` | 5+ API anahtarı arasında otomatik yük dengeleme ve 429/503 hata durumunda kesintisiz failover havuzu. |
 | `LiveVideoTranslator` | `live/LiveVideoTranslator.kt` | Video veya sistem sesinden Türkçe altyazı ve dublaj üretimi. |
 

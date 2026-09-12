@@ -111,7 +111,7 @@
             android:layout_marginEnd="4dp"
             android:background="@color/glass_border" />
 
-        <!-- Action 3: CamScanner Style PDF Scan -->
+        <!-- Action 3: Smart Color PDF Document Scan -->
         <LinearLayout
             android:id="@+id/btnActionScanDoc"
             android:layout_width="wrap_content"

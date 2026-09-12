@@ -30,7 +30,7 @@ import kotlin.math.min
  * Akilli Belge Tarayici ve PDF Motoru
  *
  * - Belge koselerini otomatik tespit eder ve perspektif duzeltme (Perspective Transform) uygular.
- * - CamScanner "Magic Color" renk korumali filtre:
+ * - Akilli Renkli Belge Filtresi (Magic Color):
  *   Renkli fotograflari, mavi/kirmizi imzalari ve resmi muhurleri canli korur, kagit arka planini beyazlatir.
  * - Yuksek cozunurluklu A4 PDF uretir ve sistem paylasimini acar.
  */
@@ -38,7 +38,7 @@ class DocumentScannerProcessor(private val context: Context) {
 
     suspend fun processAndExportPdf(
         imageFile: File,
-        applyCamScannerFilter: Boolean = true,
+        applyEnhancementFilter: Boolean = true,
         autoCropEdges: Boolean = true
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
@@ -55,8 +55,8 @@ class DocumentScannerProcessor(private val context: Context) {
                 orientedBitmap
             }
 
-            // 3. CamScanner "Magic Color" renk korumalı belge iyileştirmesi uygula
-            val processedBitmap = if (applyCamScannerFilter) {
+            // 3. Akıllı Renk Korumalı Belge İyileştirmesi uygula
+            val processedBitmap = if (applyEnhancementFilter) {
                 applyMagicColorFilter(croppedBitmap)
             } else {
                 croppedBitmap
@@ -408,7 +408,7 @@ class DocumentScannerProcessor(private val context: Context) {
     }
 
     /**
-     * CamScanner Magic Color Renk Korumali Belge Iyilestirme Filtresi
+     * Akıllı Renk Korumalı Belge İyileştirme Filtresi (Magic Color)
      *
      * 1. Kagit arka planini beyazlatir.
      * 2. Fotograflarin, kimlik kartlarinin ve renkli grafiklerin renk tonlarini korur.

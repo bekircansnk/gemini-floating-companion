@@ -84,12 +84,42 @@ class GeminiApiKeyManager private constructor() {
         } else null
     )
 
+    private val userKeyPool = java.util.concurrent.CopyOnWriteArrayList<GeminiKeyInfo>()
     private val currentIndex = AtomicInteger(0)
     private val statsMap = ConcurrentHashMap<String, Int>()
 
+    fun updateUserKeys(keys: List<String>) {
+        val currentStats = userKeyPool.associate { it.key to Pair(it.successCount, it.failureCount) }
+        userKeyPool.clear()
+        keys.map { it.trim() }.filter { it.isNotBlank() }.distinct().forEachIndexed { index, key ->
+            val stats = currentStats[key]
+            userKeyPool.add(
+                GeminiKeyInfo(
+                    id = "user_${index + 1}",
+                    key = key,
+                    name = "Özel Anahtar ${index + 1}",
+                    type = "user",
+                    priority = 1,
+                    successCount = stats?.first ?: 0,
+                    failureCount = stats?.second ?: 0
+                )
+            )
+        }
+        Log.i(TAG, "Kullanıcı özel API anahtarları güncellendi. Toplam havuz: ${userKeyPool.size} anahtar.")
+    }
+
+    private fun getCombinedPool(): List<GeminiKeyInfo> {
+        return if (userKeyPool.isNotEmpty()) {
+            userKeyPool.toList()
+        } else {
+            keyPool
+        }
+    }
+
     fun getActiveKeyInfo(): GeminiKeyInfo {
         cleanupCooldowns()
-        if (keyPool.isEmpty()) {
+        val currentPool = getCombinedPool()
+        if (currentPool.isEmpty()) {
             return GeminiKeyInfo(
                 id = "custom_or_none",
                 key = "",
@@ -98,12 +128,17 @@ class GeminiApiKeyManager private constructor() {
                 priority = 1
             )
         }
-        val healthy = keyPool.filter { it.isHealthy }
+        val healthy = currentPool.filter { it.isHealthy }
         val poolToUse = if (healthy.isNotEmpty()) healthy else {
-            // Tüm anahtarlar cooldown'da ise cooldown sürelerini sıfırla ve baştan başla
-            Log.w(TAG, "Tüm API anahtarları beklemede, cooldown sıfırlanıyor...")
-            keyPool.forEach { it.isHealthy = true; it.cooldownUntilMs = 0L }
-            keyPool
+            val backupHealthy = keyPool.filter { it.isHealthy }
+            if (backupHealthy.isNotEmpty()) {
+                Log.w(TAG, "Tüm özel anahtarlar beklemede, dahili Maestro yedek havuzuna geçiliyor...")
+                backupHealthy
+            } else {
+                Log.w(TAG, "Tüm API anahtarları beklemede, cooldown sıfırlanıyor...")
+                currentPool.forEach { it.isHealthy = true; it.cooldownUntilMs = 0L }
+                currentPool
+            }
         }
         val idx = currentIndex.get() % poolToUse.size
         return poolToUse[idx.coerceAtLeast(0)]
@@ -134,8 +169,12 @@ class GeminiApiKeyManager private constructor() {
         return nextKey
     }
 
+    private fun findKey(key: String): GeminiKeyInfo? {
+        return userKeyPool.find { it.key == key } ?: keyPool.find { it.key == key }
+    }
+
     fun reportSuccess(key: String) {
-        val info = keyPool.find { it.key == key } ?: return
+        val info = findKey(key) ?: return
         info.isHealthy = true
         info.failureReason = null
         info.cooldownUntilMs = 0L
@@ -144,7 +183,7 @@ class GeminiApiKeyManager private constructor() {
     }
 
     fun reportFailure(key: String, code: Int, errorMsg: String) {
-        val info = keyPool.find { it.key == key } ?: return
+        val info = findKey(key) ?: return
         info.failureCount++
         val isRateLimit = code == 429 || errorMsg.contains("429", ignoreCase = true) ||
                 errorMsg.contains("quota", ignoreCase = true) ||
@@ -220,12 +259,17 @@ class GeminiApiKeyManager private constructor() {
 
     fun getAllKeysStatus(): List<GeminiKeyInfo> {
         cleanupCooldowns()
-        return keyPool.toList()
+        return if (userKeyPool.isNotEmpty()) {
+            userKeyPool.toList() + keyPool.toList()
+        } else {
+            keyPool.toList()
+        }
     }
 
     private fun cleanupCooldowns() {
         val now = System.currentTimeMillis()
-        keyPool.forEach { key ->
+        val allKeys = userKeyPool + keyPool
+        allKeys.forEach { key ->
             if (!key.isHealthy && key.cooldownUntilMs > 0L && now >= key.cooldownUntilMs) {
                 key.isHealthy = true
                 key.failureReason = null

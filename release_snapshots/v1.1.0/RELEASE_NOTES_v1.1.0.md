@@ -20,7 +20,7 @@
    - Analiz edilen tablo, metin ve listeler doğrudan aktif WhatsApp/mesaj kutusuna yazılır (`GeminiAccessibilityService.instance?.insertText()`) ve panoya kopyalanır.
 3. **Kesintisiz Çoklu API Failover**:
    - 5 farklı Gemini API anahtarı arasında rotasyon ve failover havuzu (`GeminiApiKeyManager`).
-   - `gemini-3.8-flash` yoğunluk anında (HTTP 503 Spike) otomatik olarak `gemini-2.5-flash` ve `gemini-3.5-flash-lite` modellerine geçerek işlemi başarıyla tamamlar.
+   - `gemini-3.8-flash` yoğunluk anında (HTTP 503 Spike) veya kota aşımında otomatik olarak ultra hızlı `gemini-3.5-flash-lite` modeline geçerek işlemi kesintisiz tamamlar.
 4. **Sıfır Sızıntı & Gizlilik Mimarisi**:
    - API anahtarları kaynak koddan temizlendi; `local.properties` ve `BuildConfig` mimarisine taşındı.
    - GitHub deposuna hiçbir özel anahtar veya token gönderilmez.

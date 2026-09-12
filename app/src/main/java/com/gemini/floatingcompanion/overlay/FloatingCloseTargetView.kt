@@ -37,7 +37,11 @@ class FloatingCloseTargetView(
         PixelFormat.TRANSLUCENT
     ).apply {
         gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        y = 70
+        val dm = context.resources.displayMetrics
+        y = (60 * dm.density).toInt()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
     }
 
     private val targetCircle: FrameLayout
@@ -47,7 +51,7 @@ class FloatingCloseTargetView(
 
     init {
         val density = context.resources.displayMetrics.density
-        val sizePx = (64 * density).toInt()
+        val sizePx = (72 * density).toInt()
 
         targetCircle = FrameLayout(context).apply {
             layoutParams = LayoutParams(sizePx, sizePx).apply {
@@ -110,7 +114,7 @@ class FloatingCloseTargetView(
         val targetCenterY = location[1] + targetCircle.height / 2f
 
         val distance = hypot((bubbleCenterX - targetCenterX).toDouble(), (bubbleCenterY - targetCenterY).toDouble()).toFloat()
-        val hitRadius = targetCircle.width * 1.25f
+        val hitRadius = targetCircle.width * 1.6f
 
         val hoveredNow = distance < hitRadius
         if (hoveredNow != isHovered) {
