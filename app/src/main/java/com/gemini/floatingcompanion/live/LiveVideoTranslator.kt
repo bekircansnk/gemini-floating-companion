@@ -558,7 +558,11 @@ class LiveVideoTranslator(
 
     private fun updateSubtitleText(text: String) {
         val now = System.currentTimeMillis()
-        if (now - lastSubtitleResetEpoch > 5000L) {
+        val cleanText = text.trim()
+        if (cleanText.isEmpty()) return
+
+        // 6.5 saniye ses/altyazı gelmemişse veya turn arası uzunsa pencereyi sıfırla
+        if (now - lastSubtitleResetEpoch > 6500L) {
             synchronized(currentTurnSubtitle) {
                 currentTurnSubtitle.clear()
             }
@@ -568,14 +572,30 @@ class LiveVideoTranslator(
         val displaySubtitle = synchronized(currentTurnSubtitle) {
             val prev = currentTurnSubtitle.toString().trim()
             if (prev.isEmpty()) {
-                currentTurnSubtitle.append(text)
-            } else if (text.startsWith(prev, ignoreCase = true)) {
+                currentTurnSubtitle.append(cleanText)
+            } else if (cleanText.startsWith(prev, ignoreCase = true)) {
+                // Sunucu cümlenin tamamını kümülatif gönderiyorsa yenisiyle güncelle
                 currentTurnSubtitle.clear()
-                currentTurnSubtitle.append(text)
-            } else if (!prev.endsWith(text, ignoreCase = true)) {
-                currentTurnSubtitle.append(" ").append(text)
+                currentTurnSubtitle.append(cleanText)
+            } else if (prev.endsWith(cleanText, ignoreCase = true)) {
+                // Zaten var olan son ek
+            } else {
+                // Parçalı yeni gelen kelime/kelime grubu: boşlukla bağla
+                currentTurnSubtitle.append(" ").append(cleanText)
             }
-            currentTurnSubtitle.toString().trim()
+
+            // Kayan pencere (Sliding Window): Altyazı ekranı doldurup taşmasın,
+            // en güncel söylenen 2-3 cümle (son ~180 karakter) akıcı şekilde ekranda kalsın
+            var result = currentTurnSubtitle.toString().trim()
+            if (result.length > 200) {
+                val cutIndex = result.indexOf(' ', result.length - 170)
+                if (cutIndex > 0 && cutIndex < result.length - 20) {
+                    result = "..." + result.substring(cutIndex)
+                    currentTurnSubtitle.clear()
+                    currentTurnSubtitle.append(result)
+                }
+            }
+            result
         }
 
         scope.launch(Dispatchers.Main) {

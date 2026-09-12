@@ -2,11 +2,11 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="16dp" />
-    <!-- Highly transparent dark glass surface (~22% opacity) for unobstructed video viewing in landscape -->
-    <solid android:color="#380B1220" />
+    <!-- High-contrast dark glass surface (~80% opacity) ensuring crystal-clear readability even over bright/white video backgrounds -->
+    <solid android:color="#CC0B1220" />
     <stroke
-        android:width="1dp"
-        android:color="#2BFFFFFF" />
+        android:width="1.2dp"
+        android:color="#4DFFFFFF" />
     <padding
         android:bottom="8dp"
         android:left="14dp"

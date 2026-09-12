@@ -89,6 +89,15 @@ class GeminiApiKeyManager private constructor() {
 
     fun getActiveKeyInfo(): GeminiKeyInfo {
         cleanupCooldowns()
+        if (keyPool.isEmpty()) {
+            return GeminiKeyInfo(
+                id = "custom_or_none",
+                key = "",
+                name = "Kullanıcı Özel Anahtarı",
+                type = "custom",
+                priority = 1
+            )
+        }
         val healthy = keyPool.filter { it.isHealthy }
         val poolToUse = if (healthy.isNotEmpty()) healthy else {
             // Tüm anahtarlar cooldown'da ise cooldown sürelerini sıfırla ve baştan başla

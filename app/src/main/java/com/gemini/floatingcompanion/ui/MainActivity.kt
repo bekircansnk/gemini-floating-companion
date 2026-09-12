@@ -265,37 +265,41 @@ fun MainScreen() {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Key,
-                                contentDescription = "Vault",
-                                tint = GeminiBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Merkezi Vault Havuzu",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp
+                    val availableVaultKeys = remember { keyManager.getAllKeysStatus() }
+
+                    if (availableVaultKeys.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Key,
+                                    contentDescription = "Vault",
+                                    tint = GeminiBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Merkezi Vault Havuzu",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp
+                                )
+                            }
+                            Switch(
+                                checked = useVaultPool,
+                                onCheckedChange = {
+                                    useVaultPool = it
+                                    prefs.useVaultPool = it
+                                }
                             )
                         }
-                        Switch(
-                            checked = useVaultPool,
-                            onCheckedChange = {
-                                useVaultPool = it
-                                prefs.useVaultPool = it
-                            }
-                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (useVaultPool) {
+                    if (useVaultPool && availableVaultKeys.isNotEmpty()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -335,7 +339,7 @@ fun MainScreen() {
 
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Havuz Durumu: 5 Anahtar devrede. 429 Rate Limit veya kota aşımında sistem sıradaki anahtara sıfır kesintiyle otomatik geçer.",
+                            text = "Havuz Durumu: ${availableVaultKeys.size} Anahtar devrede. 429 Rate Limit veya kota aşımında sistem sıradaki anahtara sıfır kesintiyle otomatik geçer.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

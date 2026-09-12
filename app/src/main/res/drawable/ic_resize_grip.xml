@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="20"
+    android:viewportHeight="20">
+    <!-- Distinct 3-stripe diagonal corner resize grip -->
+    <path
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M 17,7 L 7,17 M 17,11 L 11,17 M 17,15 L 15,17" />
+</vector>
